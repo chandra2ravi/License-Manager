@@ -1,0 +1,29 @@
+<Apex:page >
+
+</Apex:page>
+<!-- <apex:page id="LicManagerReport" tabstyle="Product2" controller="LicenseManagerReportCls"> -->
+<!--     <apex:form > -->
+<!--         <apex:pageblock title="License Manager Usage Report"> -->
+<!--             <apex:pageblockbuttons location="bottom"> -->
+<!--                 <apex:commandbutton value="Run Report - Export to Excel" action="{!GenerateReport}"/> -->
+<!--             </apex:pageblockbuttons> -->
+<!--             <apex:pagemessages id="msg"/> -->
+<!--             <apex:pageblocksection collapsible="false" columns="2" title="This report shows all of the activity and usage of License Manager self service customer portal"> -->
+<!--                 <apex:pageblocksectionitem > -->
+<!--                     <apex:outputlabel value="Start Date"/> -->
+<!--                     <apex:inputfield value="{!objFrom.BirthDate}"/> -->
+<!--                 </apex:pageblocksectionitem> -->
+<!--                 <apex:pageblocksectionitem > -->
+<!--                     <apex:outputlabel value="End Date"/> -->
+<!--                     <apex:inputfield value="{!objTo.BirthDate}"/> -->
+<!--                 </apex:pageblocksectionitem> -->
+<!--             </apex:pageblocksection> -->
+<!--             <apex:pageblocksection collapsible="false" columns="1" title="Optionally filter the report for a specific customer account"> -->
+<!--                 <apex:pageblocksectionitem > -->
+<!--                     <apex:outputlabel value="Customer Account"/> -->
+<!--                     <apex:inputfield value="{!ObjKeyUser.Account__c}"/> -->
+<!--                 </apex:pageblocksectionitem> -->
+<!--             </apex:pageblocksection> -->
+<!--         </apex:pageblock> -->
+<!--     </apex:form> -->
+<!-- </apex:page> -->

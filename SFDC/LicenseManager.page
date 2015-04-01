@@ -1,0 +1,215 @@
+<apex:page standardController="License_Manager__c" extensions="LicenseManagerController,LicenseManagerReportCls" id="LicManagePg" tabStyle="Product2" sidebar="false">
+    <style>
+        .popupBackground {
+             background-color:black;
+             opacity: 0.20;
+             filter: alpha(opacity = 20);
+             width: 100%;
+             height: 100%;
+             top: 0;
+             left: 0;
+             z-index: 998;
+             position: absolute;
+         }
+         /* This is for the message DIV */
+         .PopupPanel {
+             left: 50%;
+             width: 100px;
+             border-radius: 15px 
+             top: 50%;
+             height: 100px;
+             margin-top: 200px;
+             z-index: 999;
+             position: fixed;
+         }
+         .productTab .secondaryPalette, .individualPalette .productBlock .secondaryPalette{
+            border-color: #F0532A;
+         }
+         .productTab .tertiaryPalette, .individualPalette .productBlock .tertiaryPalette, .layoutEdit .individualPalette .productBlock .tertiaryPalette{
+            background-color: #F0532A;
+         }
+         .myActiveTab {background-color: #F0532A;height:17px; color:white; background-image:none; }
+         .myInactiveTab { cursor:pointer;background-color: white;height:17px; color:black; background-image:none; }
+         .whiteBG { background-color: white; }
+    </style>
+    <apex:actionStatus id="pleasewait" stopText="">
+        <apex:facet name="start">
+            <div>
+                <div class="popupBackground"></div>
+                <div class="PopupPanel">
+                    <img src="{!$Resource.CaseVFLoader}"/>
+                </div>
+            </div>
+        </apex:facet>
+    </apex:actionStatus>
+    <apex:form id="LicMngFrm">
+        <apex:actionFunction name="DisplayVersions" status="pleasewait" action="{!FetchVersions}" reRender="versionpnlGrp,ErrMsg"/>
+        <apex:actionFunction name="InvokeSaveFun" status="pleasewait" action="{!SaveChanges}" reRender="licensePB,ErrMsg"/>
+        <apex:actionFunction name="LMAddFun" status="pleasewait" action="{!AddNewLM}" reRender="licensePB,ErrMsg"/>
+        <apex:actionFunction name="LMRemoveFun" status="pleasewait" action="{!RemoveLM}" reRender="licensePB,ErrMsg"/>
+        <apex:inputhidden id="AllSelLic" value="{!AllLicenseManagers}"/>
+        <apex:inputhidden id="selLicMan" value="{!strSelLicManager}"/> 
+        <apex:tabPanel switchType="client" selectedTab="name1" id="tabbedPanel" tabClass="myActiveTab" inactiveTabClass="myInactiveTab">
+            <!-- License Manager Tab -->
+            <apex:tab label="License Manager Product List" name="tab1" id="tabOne" rendered="{!isAdmin}">
+                <apex:pageblock id="licensePB">
+                    <apex:pageblocksection columns="1" id="LicenseManagerPBS" title="Product List" collapsible="false">
+                        <apex:panelGrid columns="5" id="LicenseManagerPanelGrid">
+                            <apex:panelGroup >
+                                <apex:outputLabel styleClass="labelCol" value="All Products" style="font-size:12px;width:100px; color:#000; padding-bottom:5px; display:block; text-align:left;" />
+                                <apex:selectList id="AllProducts" value="{!strAllProdSelval}" multiselect="false" style="font-size:12px;max-width:300px;min-width:300px;min-height:250px;" size="8" title="this.value">
+                                    <apex:selectOptions id="AllProductsList" value="{!AllProducts}"/>
+                                </apex:selectList>
+                            </apex:panelGroup>
+                            <apex:panelGroup >
+                                <div style="padding-top:120px; width:30px;">
+                                    <img src="/img/ple/directionals/right.gif" id="rlPropFields_iconRight" style="cursor:pointer;margin:2px;" onclick="AddLicManager();return false;"/>
+                                    <img src="/img/ple/directionals/left.gif" id="rlPropFields_iconLeft" style="cursor:pointer;margin:2px;" onclick="RemoveLicManager();return false;"/>
+                                </div>  
+                            </apex:panelGroup>
+                            <apex:panelGroup >
+                                <apex:outputLabel styleClass="labelCol" value="Available in License Manager" style="font-size:12px;width:200px; color:#000; padding-bottom:5px; display:block; text-align:left;min-width:300px;" />
+                                <apex:selectList id="LicenseManager" value="{!strLicManagerSelval}" multiselect="false" style="font-size:12px;max-width:300px;min-width:300px;;min-height:250px;" size="8" onchange="PrepareVersions();">
+                                    <apex:selectOptions id="AvailLicList" value="{!availbleLicenses}"/>
+                                </apex:selectList> 
+                            </apex:panelGroup>
+                            
+                            <apex:panelgroup id="versionpnlGrp">
+                                <apex:outputLabel styleClass="labelCol" value="Product Version Numbers" style="width:180px;font-size:12px; color:#000; padding-bottom:5px; display:block; text-align:left;" />
+                                <apex:selectList id="Versions" value="{!strLicVersionsSel}" multiselect="false" style="min-width:300px;max-width:300px;font-size:12px;" size="8">
+                                    <apex:selectOptions id="LicVersionsList" value="{!LicenseVersionslst}"/>
+                                </apex:selectList>
+                            </apex:panelgroup>
+                            <apex:panelGroup id="ActionPnl">
+                                <apex:outputpanel layout="block" id="Add_Remove_VersionsPnl" style="margin-top:20px;margin-bottom:10px;">
+                                    <apex:outputlabel value="Add new product version number: " styleClass="labelCol"/>
+                                    <apex:inputtext value="{!strNewVersionNumber}" style="width:35px;"/>&nbsp;&nbsp;
+                                    <apex:commandButton value="Add" status="pleasewait" action="{!AddVersion}" rerender="versionpnlGrp,ActionPnl" style="width:50px;"/>
+                                    <br/>
+                                    <apex:outputlabel value="Remove selected product version number: " styleClass="labelCol"/>&nbsp;&nbsp;
+                                    <apex:commandButton value="Remove" action="{!RemoveVersion}" status="pleasewait" rerender="versionpnlGrp,ActionPnl"/>
+                                </apex:outputpanel>
+                                <apex:outputPanel >
+                                    <apex:commandButton value="Save Changes" onclick="SaveDetails('AllProducts','LicenseManager');return false;"/>
+                                </apex:outputPanel>
+                                <apex:pagemessages id="ErrMsg"/>
+                            </apex:panelGroup>
+                            
+                        </apex:panelGrid>
+                        <apex:panelGrid columns="3">
+<!--                             <apex:panelgroup id="versionpnlGrp"> -->
+<!--                                 <apex:outputLabel styleClass="labelCol" value="Product Version Numbers" style="width:180px;font-size:12px; color:#000; padding-bottom:5px; display:block; text-align:left;" /> -->
+<!--                                 <apex:selectList id="Versions" value="{!strLicVersionsSel}" multiselect="false" style="min-width:300px; font-size:12px;" size="8"> -->
+<!--                                     <apex:selectOptions id="LicVersionsList" value="{!LicenseVersionslst}"/> -->
+<!--                                 </apex:selectList> -->
+<!--                             </apex:panelgroup> -->
+<!--                             <apex:panelGroup id="ActionPnl"> -->
+<!--                                 <apex:outputpanel layout="block" id="Add_Remove_VersionsPnl" style="margin-top:20px;margin-bottom:10px;"> -->
+<!--                                     <apex:outputlabel value="Add new product version number: " styleClass="labelCol"/> -->
+<!--                                     <apex:inputtext value="{!strNewVersionNumber}" style="width:35px;"/>&nbsp;&nbsp; -->
+<!--                                     <apex:commandButton value="Add" status="pleasewait" action="{!AddVersion}" rerender="versionpnlGrp,ActionPnl" style="width:50px;"/> -->
+<!--                                     <br/> -->
+<!--                                     <apex:outputlabel value="Remove selected product version number: " styleClass="labelCol"/>&nbsp;&nbsp; -->
+<!--                                     <apex:commandButton value="Remove" action="{!RemoveVersion}" status="pleasewait" rerender="versionpnlGrp,ActionPnl"/> -->
+<!--                                 </apex:outputpanel> -->
+<!--                                 <apex:outputPanel > -->
+<!--                                     <apex:commandButton value="Save Changes" onclick="SaveDetails('AllProducts','LicenseManager');return false;"/> -->
+<!--                                 </apex:outputPanel> -->
+<!--                                 <apex:pagemessages id="ErrMsg"/> -->
+<!--                             </apex:panelGroup> -->
+                        </apex:panelGrid>
+                    </apex:pageblocksection>
+                </apex:pageblock>
+            </apex:tab>
+            <apex:tab label="License Manager Reports" name="tab2" id="tabTwo">
+                <apex:pageblock title="License Manager Usage Report"> 
+                    <apex:pageblockbuttons >
+                        <apex:commandbutton value="Run Report" status="pleasewait" action="{!GenerateReport}" rerender="msg,LicKeyRecs"/>
+                        <apex:commandbutton value="Export to Excel" action="{!ExportReport}" rerender="msg"/>
+                    </apex:pageblockbuttons>
+                    <apex:pagemessages id="msg"/>
+                    <apex:pageblocksection collapsible="false" columns="2" title="This report shows all of the activity and usage of License Manager self service customer portal">
+                        <apex:pageblocksectionitem >
+                            <apex:outputlabel value="Start Date"/>
+                            <apex:inputfield value="{!objFrom.BirthDate}"/>
+                        </apex:pageblocksectionitem>
+                        <apex:pageblocksectionitem >
+                            <apex:outputlabel value="End Date"/>
+                            <apex:inputfield value="{!objTo.BirthDate}"/>
+                        </apex:pageblocksectionitem>
+                    </apex:pageblocksection>
+                    <apex:pageblocksection collapsible="false" columns="1" title="Optionally filter the report for a specific customer account">
+                        <apex:pageblocksectionitem >
+                            <apex:outputlabel value="Customer Account"/>
+                            <apex:inputfield value="{!ObjKeyUser.Account__c}"/>
+                        </apex:pageblocksectionitem>
+                    </apex:pageblocksection>
+                    <apex:pageblocksection title="License Manager Report details" columns="1" collapsible="false">
+                        <apex:pageBlockTable id="LicKeyRecs" value="{!lstReport}" columns="16" var="res" style="width:99%;margin-left:5px;">
+                            
+                            <apex:column headerValue="License Manager Name" value="{!res.obj.Name}" />
+                            <apex:column headerValue="Email" value="{!res.obj.Email__c}" />
+                            <apex:column headerValue="Phone" value="{!res.obj.Phone__c}" />
+                            
+                            <apex:column headerValue="Account" value="{!res.obj.Account__c}" />
+                            <apex:column headerValue="Existing License Keys" style="width:100px;" value="{!res.obj.Existing_license_Keys__c}" />
+                            <apex:column headerValue="License Key" value="{!res.obj.License_Key__c}" />
+                            
+                            <apex:column headerValue="Quantity" value="{!res.obj.Quantity__c}" />
+                            <apex:column headerValue="Repository host Instance" value="{!res.obj.Repository_host_instance__c}" />
+                            <apex:column headerValue="Product" value="{!res.ProductName}" />
+                            
+                            <apex:column headerValue="Version" value="{!res.obj.Version__c}"/>
+                            
+                            <apex:column headerValue="Type" value="{!res.obj.License_Type__c}"/>
+                            <apex:column headerValue="Generated Date" value="{!res.obj.Generated_Date__c}"/>
+                            <apex:column headerValue="Total Contract Qty" value="{!res.obj.Total_Contract_Qty__c}"/>
+                            <apex:column headerValue="Total Available Qty" value="{!res.obj.Total_Available_Qty__c}"/>
+                            <apex:column headerValue="Generated By" value="{!res.obj.Generated_By__c}"/>
+                            <apex:column headerValue="Transaction Exception" value="{!res.obj.Transaction_Exception__c}"/>
+                            
+                        </apex:pageBlockTable>
+                    </apex:pageblocksection>
+                </apex:pageblock>
+            </apex:tab>
+        </apex:tabPanel>
+        <script>
+            function AddLicManager(){
+                LMAddFun();
+            }
+            function RemoveLicManager(){
+                LMRemoveFun();
+            }
+            function SaveDetails(fromId,toId){
+                if(document.getElementById('LicManagePg:LicMngFrm:licensePB:LicenseManagerPBS:'+fromId)!=null && document.getElementById('LicManagePg:LicMngFrm:licensePB:LicenseManagerPBS:'+toId)!=null){
+                    var leftOptions = document.getElementById('LicManagePg:LicMngFrm:licensePB:LicenseManagerPBS:'+fromId);
+                    var rightOptions = document.getElementById('LicManagePg:LicMngFrm:licensePB:LicenseManagerPBS:'+toId);
+                    var SelectedLMs = '';
+                    for(var i=0;i<rightOptions.options.length;i++){
+                        if(SelectedLMs==''){
+                            SelectedLMs = rightOptions.options[i].value;
+                        }else{
+                            SelectedLMs = SelectedLMs+';'+rightOptions.options[i].value;
+                        }
+                    }
+                    console.log('SelectedLMs==>'+SelectedLMs);
+                    document.getElementById('LicManagePg:LicMngFrm:AllSelLic').value = SelectedLMs;
+                    InvokeSaveFun();
+                 }
+            }
+            function PrepareVersions(){
+                document.getElementById('LicManagePg:LicMngFrm:selLicMan').value = document.getElementById('LicManagePg:LicMngFrm:licensePB:LicenseManagerPBS:LicenseManager').value;
+                DisplayVersions();
+            }
+            function InvokeExport(){
+                ExportLMFun();
+            }
+            function OpenReport(){
+                var repURL = document.getElementById('LicManagePg:LicMngFrm:NavigURL').value;
+                if(repURL!=null && repURL!=''){
+                    window.open(repURL, "Report Export", "width=800,height=500,toolbar=no, scrollbars=no, resizable=no");
+                }
+            }
+        </script>
+    </apex:form>
+</apex:page>

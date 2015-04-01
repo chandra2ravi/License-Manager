@@ -1,0 +1,685 @@
+<apex:page controller="GenerateVFController">
+    <apex:stylesheet value="{!URLFOR($Resource.Customer_Portal, 'css/tablesorter.css')}"/><!-- Css -->
+<Style >
+
+
+.theDiv
+{
+    /*border: 2px solid #000000;*/
+    width: 600px;
+    height:350px;
+     
+}
+
+#tableid,.td1
+{
+margin-left:25px;
+/*border:2px solid black;*//
+border-collapse:collapse;
+}
+
+.thediv1 {
+    /*border: 2px solid #000000;*/
+    width: 600px;
+     
+    
+}
+
+
+
+
+.thediv2 {
+    /*border: 2px solid #000000;*/
+    /*width: 600px;*/
+    
+  
+}
+#divWizard a:hover, .miniTab .currentTab a:hover {
+color: #1468b6 !important;
+text-decoration: underline !important;
+}
+ 
+#divWizard a, .miniTab .currentTab a {
+color: #1468b6 !important;
+text-decoration: none !important;
+}
+
+.thediv3 {
+    /*border: 2px solid #000000;*/
+    width: 600px;
+     
+}
+.thediv4 {
+   /* border: 2px solid #000000;*/
+    width: 600px;
+       
+}
+.btn{padding: 4px;}
+fieldset {
+  border: 2px #000 solid;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.message{
+    margin: 4px 0px !important;
+}
+
+</style>
+
+<SCRIPT LANGUAGE="JavaScript">
+    function ClipBoard( holdtext ) 
+    {
+        var text = document.getElementById(holdtext).innerHTML;
+        window.prompt("Copy to clipboard: Ctrl+C, Enter", text.replace(':','').trim());
+        //Copied.execCommand("Copy");
+    }
+    
+    function validateInputs(tableId)
+    {
+        var step1Tbl = document.getElementById(tableId);
+        var isError = false;
+        if( step1Tbl ){
+            var inputs = step1Tbl.getElementsByTagName('input');
+            if(inputs){
+                for(var i=0; i<inputs.length; i++ ){
+                    if(inputs[i].value.length == 0 ){
+                        inputs[i].className = 'error';
+                        isError = true;
+                    }else{
+                        inputs[i].className = '';
+                    }
+                    if(isError==false && i==inputs.length-1){
+                        var isValidPhone = phonenumber(inputs[i].value);
+                        if(isValidPhone=='invalid'){
+                            inputs[i].className = 'error';
+                            isError = true;
+                            document.getElementById('PhoneError').style.display='';
+                        }else{
+                            document.getElementById('PhoneError').style.display='none';
+                        }
+                    }
+                }
+            }
+        }
+        if( isError )
+            return false;
+        else if( validateEmail(document.getElementById('{!$component.theForm.thePB.email}').value) )
+            nextstep1();
+        else return false;      
+    } 
+    
+    function validateLicenseKeys(tableId)
+    {
+      var step3aTbl = document.getElementById(tableId);
+    
+        if(step3aTbl)
+        {
+        var inputs = step3Tbl.getElementsByTagName('input');
+            if(inputs)
+            {
+                for(var i =0; i<inputs.length; i++)
+                {
+                    if(inputs[i].value.length ==0)
+                    {
+                       inputs[i].className = 'error';
+                        document.getElementById('keyError').style.display='';
+                    }
+                    else
+                    {
+                       inputs[i].className = '';
+                        document.getElementById('keyError').style.display='none';
+                    }
+                }
+            }
+        }
+    }
+    
+    function validateEmail(email) { 
+        var atpos = email.indexOf("@");
+        var dotpos = email.lastIndexOf(".");
+        var emailError = document.getElementById('emailError');
+        if (atpos<1 || dotpos<atpos+2 || dotpos+2>=email.length) {
+                emailError.style.display = 'block';
+            return false;
+        }
+        else {
+                emailError.style.display = 'none';
+        }
+        return true;
+    } 
+    
+    function replaceCheck( isValidServer )
+    {
+        //console.log('isValidServer RC ' +isValidServer);
+        if ( isValidServer == 'true')
+        {
+            var existedKey = document.getElementById('existedKey');
+            existedKey.checked=true;
+        }
+    }
+    function phonenumber(inputtxt){  
+        var phoneno = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;  
+        if(inputtxt.match(phoneno)){  
+            return 'valid';  
+        }else{  
+            return 'invalid';  
+        }  
+    }  
+</SCRIPT>
+
+<apex:form id="theForm"> 
+<apex:actionfunction name="PrepareVersions" action="{!FetchVersions}" reRender="theForm" />
+<div id="tableheadasset"> <h2>Generate License Key</h2></div><br/>
+<apex:pageMessages id="Msg"/>
+
+<div id="divWizard">
+    <apex:pageBlock rendered="{!step1}" id="thePB">
+        <div class="theDiv">
+            <span style="text-decoration:underline; font-weight: bold;">Step 1</span><br/><br/> <br/> 
+            <p>
+                Use this form to generate a new license key. Enter your personal information into the fields below to access the form to generate a new product license key.
+                This information is required to audit records. 
+            </p> 
+            <table style="width:90%;" id="step1">
+                <tr>
+                  <td class="td1" >Name</td>  
+                  <td class="td1">
+                    <div class="requiredInput">
+                        <div class="requiredBlock"></div>
+                        <apex:inputtext value="{!name}" size="50"  />
+                    </div>
+                  </td>        
+                </tr>
+                <tr>
+                  <td class="td1">Email address</td>
+                  <td class="td1">
+                    <div class="requiredInput">
+                        <div class="requiredBlock"></div>
+                        <apex:inputtext value="{!email}" size="50" id="email"/>
+                        <div id="emailError" style="display:none;" class="errorMsg"><strong>Error:</strong>Invalid email address </div>
+                    </div>
+                  </td>       
+                </tr>
+                <tr>
+                  <td class="td1" >Phone Number</td>
+                  <td class="td1">
+                    <div class="requiredInput">
+                        <div class="requiredBlock"></div>
+                        <apex:inputtext value="{!Phonenumber}" size="50" onkeydown="javascript:backspacerDOWN(this,event);" onkeyup="javascript:backspacerUP(this,event);"/>
+                        <div class="errorMsg" id="PhoneError" style="display:none;"><strong>Error:</strong> Invalid phone number</div>
+                    </div>
+                  </td>     
+                </tr>
+            </table>
+            <br/><br/>
+            <!-- <input type="button" class="btn" value="Next>>" onclick="return validateInputs('step1');"  style="margin-left: 530px;" /> -->
+            <apex:actionfunction name="nextstep1" action="{!nextstep1}" reRender="theForm" />
+            <b><apex:commandLink onclick="return validateInputs('step1');" style=" margin-left: 450px;"  value="Next >" reRender="theForm"/></b>
+        </div>
+    </apex:pageBlock>
+    <apex:pageBlock rendered="{!step2}" id="pbs2">
+        <div class="thediv2"><br/>
+            <span style="text-decoration:underline; font-weight: bold;">Step 2</span><br/><br/>
+            <p> Identify the instance that requires a new license key:</p><br/> 
+            <!-- Product<br/> -->
+            <table style="cellpaddding:0px; cellspacing:0px; border:0px 0px 0px 0px;" >
+                <tr>
+                    <td style="width:40px">Product:</td>
+                    <td>
+                        <apex:outputlabel value="{!strProductName}" style="font-weight:bold;"/>
+<!--                        <apex:selectList value="{!Productlist}" disabled="{!is_ProductPage}" multiselect="false" size="1" style="width:200px;" onchange="PrepareVersions();" > -->
+<!--                            <apex:selectOptions value="{!lstListProducts}"/> -->
+<!--                        </apex:selectList> -->
+                    </td>
+                    <td style="width:40px">&nbsp;</td>
+                    <td>Version:</td>
+                    <td>
+                        <apex:outputlabel value="{!strSelVersion}" style="font-weight:bold;"/>
+<!--                        <apex:selectList value="{!strSelVersion}" size="1" multiselect="false" disabled="{!is_ProductPage}"> -->
+<!--                            <apex:selectOptions value="{!lstListVesrions}"/> -->
+<!--                        </apex:selectList> -->
+                    </td>
+                </tr>
+            </table>
+<!--            <table style="cellpaddding:0px; cellspacing:0px; border:0px 0px 0px 0px;float:right;width:50%;" > -->
+<!--                <tr> -->
+<!--                    <td> -->
+<!--                    <fieldset style="border-radius: 0px;margin-bottom: 0px;"><b>Note:</b> If your product does not appear in the Select Product drop down list please contact: licensing@idera.com</fieldset> -->
+<!--                    </td> -->
+<!--                </tr> -->
+<!--            </table> -->
+            <br/><br/>
+            <div style="width: 500px;">         
+                <fieldset>
+                    <!-- <input  type="radio" name="key" id="newKey" value="newkey" 
+                    onclick="document.getElementById('{!$component.theForm.pbs2.keyType}').value = this.value;" /> --> 
+                    <b>Generate new license key</b><br/><br/>
+                    <p style="padding-left:20px;">Server or instance where license will be applied:</p>     
+                    <apex:inputText value="{!Repositorylickey}"  style="margin-left:20px; width:450px;"/>
+                    <p style="padding-left:20px;"><b>Example:</b> server_name\instance_name or default_instance_name</p> 
+                    <br/>
+                </fieldset>
+<!--                <fieldset> -->
+<!--                    <input type="radio" name="key" id="existedKey" value="replacekey"  -->
+<!--                    onclick="document.getElementById('{!$component.theForm.pbs2.keyType}').value = this.value;"/>        -->
+<!--                    <span><b>Replace existing license key(s)</b></span><br/><br/> -->
+<!--                    <p style="padding-left:20px;">Existing license Keys:</p> -->
+<!--                    <apex:inputTextarea value="{!Existinglickey}" rows="5" id="existingkey" style="margin-left:20px; width:450px;" /><br/> -->
+<!--                    <apex:selectlist value="{!Existinglickey}" multiselect="true" size="8" style="margin-left:20px;min-width:200px;"> -->
+<!--                    <apex:selectoptions value="{!lstAvailableExistingKeys}"/> -->
+<!--                    </apex:selectlist> -->
+<!--                    <p style="padding-left:20px;"><b>Note:</b> Separate multiple license keys with semi-colons</p> -->
+<!--                </fieldset> -->
+                <b>
+                <apex:commandLink value="< Previous" action="{!previousStep2}" style=" margin-left: 365px;" reRender="theForm" />&nbsp;-&nbsp;
+                <apex:commandLink value="Next >" action="{!nextStep2}" oncomplete="replaceCheck('{!isValidServer}');" reRender="theForm"/></b>
+            </div>
+        </div>
+        <apex:inputhidden value="{!keyType}" id="keyType" />
+        <script>
+            if('{!keyType}' == 'newkey' )
+                document.getElementById('newKey').checked = true;
+            else if('{!keyType}' == 'replacekey' )  
+                document.getElementById('existedKey').checked = true;
+        </script>
+    </apex:pageBlock>
+    <apex:pageBlock rendered="{!step3a}">
+        <div class="thediv2"><br/>
+            <span style="text-decoration:underline; font-weight: bold;">Step 3</span><br/><br/>
+            <table id="step3a" cellpadding="6">
+                <tr>
+                    <td >
+                        Total licenses:
+                    </td>
+                    <td>
+                        <apex:outputlabel value="{!Totalkeys}" style="font-weight:bold" />
+                    </td>
+                </tr>
+                <tr>
+                    <td >
+                        Available licenses:
+                    </td>
+                    <td>
+                        <apex:outputlabel value="{!Aviablekeys}" style="font-weight:bold" />
+                    </td>
+                </tr>
+                <tr>
+                    <td >
+                        Enter the number of license to use:
+                    </td>
+                     
+                  <td class="td1">
+<!--                    <div class="requiredInput"> -->
+<!--                        <div class="requiredBlock"></div> -->
+                         <apex:inputText value="{!numlicensekeys}" style="width:50px"/>
+<!--                        <div id="keysError" style="display:none;" class="errorMsg"><strong>Error:</strong>Enter the number of licenses</div> -->
+<!--                    </div> -->
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Product Name:
+                    </td>
+                    <td>
+                        <apex:outputlabel value="{!ProductName}" style="font-weight:bold"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Product Version:
+                    </td>
+                    <td>
+                        <apex:outputlabel value="{!ProductVersion}" style="font-weight:bold"/>
+                    </td>
+                </tr>
+                <tr style="display:{!IF(keyType=='newkey','','none')};">
+                    <td>
+                        Scope(Server/Instance Name):
+                    </td>
+                    <td>
+                        <apex:outputlabel value="{!strServerName}" style="font-weight:bold"/>
+                    </td>
+                </tr>
+<!--                <tr> -->
+<!--                    <td> -->
+<!--                        Expiration -->
+<!--                    </td> -->
+<!--                    <td> -->
+<!--                        <apex:outputText value=" : {0,date,MM'/'dd'/'yyyy}" style="font-weight:bold"> -->
+<!--                            <apex:param value="{!contractEndDate}" />  -->
+<!--                        </apex:outputText> -->
+<!--                    </td> -->
+<!--                </tr> -->
+                <tr>
+                    <td colspan="2" style="text-align: right;">
+                        <apex:commandButton value="Generate License Key" style="margin-right:35px;" action="{!GenerateLicenseKeystep3a}" reRender="theForm"/>
+                    </td>
+                </tr>
+            </table>
+            <div style="margin-left:400Px; font-weight: bold;">
+                <apex:commandLink value="< Previous" action="{!previousStep3a}" reRender="theForm"/>&nbsp;&nbsp;&nbsp;&nbsp;
+            </div>
+        </div>
+    </apex:pageBlock>
+    <apex:pageBlock rendered="{!step3b}">
+        <div class="thediv3"><br/>
+            <span style="text-decoration:underline; font-weight: bold;">Step 3</span><br/><br/>
+            <table  cellpadding="6" id='step3b' >
+                <tr>
+                    <td >
+                        Currently licensed
+                    </td>
+                    <td>
+                        <!-- <apex:outputText value="{!Existinglickey}"  /><br/><br/> -->
+                        <b>:</b>&nbsp;<apex:inputText value="{!Aviablekeys}" disabled="true" style="width:50px" />
+                    </td>
+                </tr>
+                <tr>
+                    <td >
+                        Additional available licenses
+                    </td>
+                    <td>
+                        <b>:</b>&nbsp;<apex:inputText value="{!Aditionalavi}" style="width:50px" disabled="true"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Enter the number of license to use
+                    </td>
+                    
+                    <td class="td1">
+                    <div class="requiredInput">
+                        <div class="requiredBlock"></div>
+                         <b>:</b>&nbsp;<apex:inputText value="{!enternumlic}" style="width:50px" />
+                        <div id="keysError" style="display:none;" class="errorMsg"><strong>Error:</strong>Enter the number of licenses</div>
+                    </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Product Name
+                    </td>
+                    <td>
+                        <apex:outputlabel value=" : {!ProductName}" style="font-weight:bold"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Product Version
+                    </td>
+                    <td>
+                        <apex:outputlabel value=" : {!ProductVersion}" style="font-weight:bold"/>
+                    </td>
+                </tr>
+                <tr style="display:{!IF(keyType=='newkey','','none')};">
+                    <td>
+                        Scope(Server/Instance Name)
+                    </td>
+                    <td>
+                        <apex:outputlabel value=" : {!strServerName}" style="font-weight:bold"/>
+                    </td>
+                </tr>
+<!--                <tr> -->
+<!--                    <td> -->
+<!--                        Expiration -->
+<!--                    </td> -->
+<!--                    <td> -->
+<!--                        <apex:outputText value=" : {0,date,MM'/'dd'/'yyyy}" style="font-weight:bold"> -->
+<!--                            <apex:param value="{!contractEndDate}" />  -->
+<!--                        </apex:outputText> -->
+<!--                    </td> -->
+<!--                </tr> -->
+                <tr>
+                    <td colspan="2" style="text-align: right;">
+                        <apex:commandButton value="Generate License Key" onclick="return validateLicenseKeys('step3b');" style="margin-right:35px;" action="{!GenerateLicenseKeyStep3b}" reRender="theForm"/>
+                    </td>
+                </tr>
+            </table>
+            <div style="margin-left:400Px; font-weight: bold;">
+                <apex:commandLink value="<< Previous" action="{!previousStep3b}"  reRender="theForm"/>&nbsp;&nbsp;&nbsp;&nbsp;
+            </div>
+        </div>
+    </apex:pageBlock>
+    <apex:pageBlock rendered="{!step4}" id="pbKey">
+        <div class="thediv4">
+            <br/>
+            <span style="text-decoration:underline; font-weight: bold;">Step 4</span><br/><br/>
+            <table style="border:none;">
+                <tr>
+                    <td style="padding-top: .5em;padding-bottom: .5em;">
+                        <label style="margin-left:30px;min-width:100px;">Your new key is:</label>
+                    </td>
+                    <td style="padding-top: .5em;padding-bottom: .5em;">
+                        <apex:outputlabel value="{!LicenseKey}" id="licenseKey" style="font-weight:bold"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-top: .5em;padding-bottom: .5em;">
+                        <label style="margin-left:30px;min-width:100px;">Product Name:</label>
+                    </td>
+                    <td style="padding-top: .5em;padding-bottom: .5em;">
+                        <apex:outputlabel value="{!ProductName}" style="font-weight:bold"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-top: .5em;padding-bottom: .5em;">
+                        <label style="margin-left:30px;min-width:100px;">Product Version:</label>
+                    </td>
+                    <td style="padding-top: .5em;padding-bottom: .5em;">
+                        <apex:outputlabel value="{!ProductVersion}" style="font-weight:bold"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-top: .5em;padding-bottom: .5em;">
+                        <label style="margin-left:30px;min-width:100px;">No of Licensed Instances:</label>
+                    </td>
+                    <td style="padding-top: .5em;padding-bottom: .5em;">
+                        <apex:outputlabel value="{!if(keyType=='newkey',numlicensekeys,enternumlic)}" style="font-weight:bold"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-top: .5em;padding-bottom: .5em;">
+                        <label style="margin-left:30px;min-width:100px;display:{!IF(keyType=='newkey','','none')};">Scope(Server/Instance Name):</label>
+                    </td>
+                    <td style="padding-top: .5em;padding-bottom: .5em;">
+                        <apex:outputlabel value="{!strServerName}" style="font-weight:bold;display:{!IF(keyType=='newkey','','none')};"/>
+                    </td>
+                </tr>
+            </table>
+            <br/>
+            <apex:commandButton value="Copy to clipboard"  style=" margin-left: 150px;" onclick="ClipBoard('{!$Component.theForm.pbKey.licenseKey}');return false;"/>
+            <apex:commandButton value=" Send via email    " action="{!sendviaemail}" reRender="theForm"/>
+        </div>
+    </apex:pageBlock>
+</div>
+</apex:form>
+<script language="javascript">
+<!-- Format : "(123) 456-7890" -->
+var zChar = new Array(' ', '(', ')', '-', '.');
+var maxphonelength = 14;
+var phonevalue1;
+var phonevalue2;
+var cursorposition;
+
+function ParseForNumber1(object){
+  phonevalue1 = ParseChar(object.value, zChar);
+}
+
+function ParseForNumber2(object){
+  phonevalue2 = ParseChar(object.value, zChar);
+}
+
+function backspacerUP(object,e) { 
+  if(e){ 
+    e = e 
+  } else {
+    e = window.event 
+  } 
+  if(e.which){ 
+    var keycode = e.which 
+  } else {
+    var keycode = e.keyCode 
+  }
+
+  ParseForNumber1(object)
+
+  if(keycode >= 48){
+    ValidatePhone(object)
+  }
+}
+
+function backspacerDOWN(object,e) { 
+  if(e){ 
+    e = e 
+  } else {
+    e = window.event 
+  } 
+  if(e.which){ 
+    var keycode = e.which 
+  } else {
+    var keycode = e.keyCode 
+  }
+  ParseForNumber2(object)
+} 
+
+function GetCursorPosition(){
+
+  var t1 = phonevalue1;
+  var t2 = phonevalue2;
+  var bool = false
+  for (i=0; i<t1.length; i++)
+  {
+    if (t1.substring(i,1) != t2.substring(i,1)) {
+      if(!bool) {
+        cursorposition=i
+        window.status=cursorposition
+        bool=true
+      }
+    }
+  }
+}
+
+function ValidatePhone(object){
+
+  var p = phonevalue1
+
+  p = p.replace(/[^\d]*/gi,"")
+
+  if (p.length < 3) {
+    object.value=p
+  } else if(p.length==3){
+    pp=p;
+    d4=p.indexOf('(')
+    d5=p.indexOf(')')
+    if(d4==-1){
+      pp="("+pp;
+    }
+    if(d5==-1){
+      pp=pp+")";
+    }
+    object.value = pp;
+  } else if(p.length>3 && p.length < 7){
+    p ="(" + p; 
+    l30=p.length;
+    p30=p.substring(0,4);
+    p30=p30+") " 
+
+    p31=p.substring(4,l30);
+    pp=p30+p31;
+
+    object.value = pp; 
+
+  } else if(p.length >= 7){
+    p ="(" + p; 
+    l30=p.length;
+    p30=p.substring(0,4);
+    p30=p30+") " 
+
+    p31=p.substring(4,l30);
+    pp=p30+p31;
+
+    l40 = pp.length;
+    p40 = pp.substring(0,9);
+    p40 = p40 + "-"
+
+    p41 = pp.substring(9,l40);
+    ppp = p40 + p41;
+
+    object.value = ppp.substring(0, maxphonelength);
+  }
+
+  GetCursorPosition()
+
+  if(cursorposition >= 0){
+    if (cursorposition == 0) {
+      cursorposition = 2
+    } else if (cursorposition <= 2) {
+      cursorposition = cursorposition + 1
+    } else if (cursorposition <= 4) {
+      cursorposition = cursorposition + 3
+    } else if (cursorposition == 5) {
+      cursorposition = cursorposition + 3
+    } else if (cursorposition == 6) { 
+      cursorposition = cursorposition + 3 
+    } else if (cursorposition == 7) { 
+      cursorposition = cursorposition + 4 
+    } else if (cursorposition == 8) { 
+      cursorposition = cursorposition + 4
+      e1=object.value.indexOf(')')
+      e2=object.value.indexOf('-')
+      if (e1>-1 && e2>-1){
+        if (e2-e1 == 4) {
+          cursorposition = cursorposition - 1
+        }
+      }
+    } else if (cursorposition == 9) {
+      cursorposition = cursorposition + 4
+    } else if (cursorposition < 11) {
+      cursorposition = cursorposition + 3
+    } else if (cursorposition == 11) {
+      cursorposition = cursorposition + 1
+    } else if (cursorposition == 12) {
+      cursorposition = cursorposition + 1
+    } else if (cursorposition >= 13) {
+      cursorposition = cursorposition
+    }
+
+    var txtRange = object.createTextRange();
+    txtRange.moveStart( "character", cursorposition);
+    txtRange.moveEnd( "character", cursorposition - object.value.length);
+    txtRange.select();
+  }
+
+}
+
+function ParseChar(sStr, sChar)
+{
+
+  if (sChar.length == null) 
+  {
+    zChar = new Array(sChar);
+  }
+    else zChar = sChar;
+
+  for (i=0; i<zChar.length; i++)
+  {
+    sNewStr = "";
+
+    var iStart = 0;
+    var iEnd = sStr.indexOf(sChar[i]);
+
+    while (iEnd != -1)
+    {
+      sNewStr += sStr.substring(iStart, iEnd);
+      iStart = iEnd + 1;
+      iEnd = sStr.indexOf(sChar[i], iStart);
+    }
+    sNewStr += sStr.substring(sStr.lastIndexOf(sChar[i]) + 1, sStr.length);
+
+    sStr = sNewStr;
+  }
+
+  return sNewStr;
+}
+</script>
+</apex:page>
